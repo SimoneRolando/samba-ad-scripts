@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+
+import os
+import subprocess
+import argparse
+import getpass
+import pwd
+import grp
+import csv
+import json
+
+# global configurations
+samba_path = None
+server_name = None
+home_dirs_path = None
+nt_domain_name = None
+pool_path = None
+pool_owner = None
+winbind_separator = None
+
+# Add users from csv
+def add_from_csv(filepath):
+    with open(filepath) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=';')
+        line_count = 1
+        added_users = 0
+
+        for row in csv_reader:
+            if len(row) != 8:
+                print(f'error: invalid csv format on line {line_count}')
+                exit(1)
+            
+            username = row[0]
+            last_name = row[1]
+            first_name = row[2]
+            groups = [row[3], row[4]] if row[4] != '' else [row[3]]
+            password = row[6]
+
+            if check_user(username):
+                print(f'skipped user {username} as it already exists')
+                line_count += 1
+                continue
+            
+            adduser(username, password, last_name, first_name, groups)
+            added_users += 1
+            line_count += 1
+
+        print(f'processed {added_users} users')
+        print(f'processed {line_count} lines')
+
+# Update user from file
+def update_from_file(filepath):
+    with open(filepath) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=';')
+        line_count = 1
+        added_users = 0
+
+        for row in csv_reader:
+            if len(row) != 8:
+                print(f'error: invalid csv format on line {line_count}')
+                exit(1)
+            
+            username = row[0]
+            last_name = row[1]
+            first_name = row[2]
+            groups = [row[3], row[4]] if row[4] != '' else [row[3]]
+            password = row[6]
+            
+            update(username, password, last_name, first_name, groups)
+            added_users += 1
+            line_count += 1
+
+        print(f'processed {added_users} users')
+        print(f'processed {line_count} lines')
+
+# Check for group existence
+def check_group(group):
+    command = f'{samba_path} group list | grep "{group}\\b" > /dev/null'
+    exit_code = os.system(command)
+
+    if exit_code != 0:
+        return False
+
+    return True
+
+# Check for user existence
+def check_user(username):
+    command = f'{samba_path} user list | grep "\\{username}\\b" > /dev/null'
+    exit_code = os.system(command)
+
+    if exit_code != 0:
+        return False
+
+    return True
+
+# Create new group on system
+def create_group(group_name):
+    command = f'{samba_path} group add "{group_name}"'
+    os.system(command)
+
+# Add a member to existing group
+def add_member(group_name, member_name):
+    command = f'{samba_path} group addmembers "{group_name}" "{member_name}"'
+    os.system(command)
+
+# Create user home directory
+def user_mkhomedir(username):
+    if not os.path.exists(f'{home_dirs_path}/{username}'):
+        os.mkdir(f'{home_dirs_path}/{username}')
+    uid = pwd.getpwnam(f'{nt_domain_name}+{username}').pw_uid
+    gid = grp.getgrnam(f'{nt_domain_name}+{username}').gr_gid
+    os.chown(f'{home_dirs_path}/{username}', uid, gid)
+
+# Read password from console input, with silent prompt
+def read_password():
+    for i in range(0, 3):
+        passwd = getpass.getpass('Enter new password: ')
+        passwd_r = getpass.getpass('Retype new password: ')
+
+        if passwd == passwd_r:
+            return passwd
+        else:
+            print('\nPassword mismatch, please retry!')
+    
+    print('\nAuthentication token manipulation error. Password mismatch')
+
+# Add a new user to the domain
+def adduser(username, password, last_name, first_name, groups):
+    command = (f'{samba_path} user create "{username}" {password} --use-username-as-cn ' + 
+              f'--surname="{last_name}" --given-name="{first_name}" ' +
+              f'--home-drive=H: --home-directory="\\\\{server_name}\\users\\{username}" ' +
+              f'--profile-path="\\\\{server_name}\\users\\{username}\\.profiles\\{username}"')
+
+    # add new user
+    os.system(command)
+    # create home dir
+    user_mkhomedir(username)
+    
+    # add user to each group or create it if it does not exist
+    for group in groups:
+        if not check_group(group):
+            create_group(group)
+        add_member(group, username)
+
+def update(username, password, last_name, first_name, groups):
+    if not check_user(username):
+        adduser(username, password, last_name, first_name, groups)
+        return
+    
+    # Update user, resetting password and groups
+    change_passwd = (f'{samba_path} user setpassword --newpassword={password} "{username}"')
+    os.system(change_passwd)
+
+    # Update groups, by removing everything but basic domain elements
+    process = subprocess.Popen([samba_path, 'user', 'getgroups', username], stdout=subprocess.PIPE)
+    p_output = process.communicate()[0]
+
+    # remove all groups except Domain Users and Domain Admins
+    output = p_output.decode('utf-8').splitlines()
+    for g in output:
+        if g != 'Domain Admins' and g != 'Domain Users':
+            os.system(f'{samba_path} group removemembers "{g}" "{username}"')
+
+    # add user to new groups
+    for g in groups:
+        print(f'group {g}')
+        if not check_group(g):
+            create_group(g)
+        os.system(f'{samba_path} group addmembers "{g}" "{username}"')
+
+
+def main():
+    config_data = None
+    
+    # check for admin privileges
+    if getpass.getuser() != 'root' and os.geteuid != 0:
+        print('error: this command must be run as root user')
+        exit(1)
+        
+    # parse the configuration file
+    try:
+        with open('/etc/ad/settings.conf', 'r') as config_file:
+            config_data = json.load(config_file)
+        
+            # load file
+            samba_path = config_data.get('samba_path', None)
+            server_name = config_data.get('server_name', None)
+            home_dirs_path = config_data.get('home_dirs_path', '/home/users')
+            nt_domain_name = config_data.get('nt_domain_name', 'NTDOMAIN')
+            pool_path = config_data.get('pool_path', '/home/groups')
+            pool_owner = config_data.get('pool_owner', 'Domain Admins')
+            winbind_separator = config_data.get('winbind_separator', '\\')
+    except json.JSONDecodeError as e:
+        print("Error parsing JSON: ", e)
+
+    parser = argparse.ArgumentParser()
+
+    # command options and arguments
+    parser.add_argument("-f", "--filename", help="path of input csv file")
+    parser.add_argument("-i", "--interactive", help="enables interactive user creation",
+                        action="store_true")
+    parser.add_argument("-u", "--update", help="enables update mode, changing existing user information")
+    parser.add_argument("USERNAME", nargs='?', help="user logon name", default='')
+
+    # Parse arguments
+    args = parser.parse_args()
+
+    # if interactive mode, read user inputs and start messing around
+    # with the user creation process
+    if args.interactive:
+        # check presence of username argument
+        if args.USERNAME == '':
+            parser.print_usage()
+            exit(1)
+
+        # Check user existence before proceeding
+        if check_user(args.USERNAME):
+            exit(0)
+        
+        # read last name and first name from console
+        print(f'Changing the user information for {args.USERNAME}')
+        last_name = input('\tLast name []: ')
+        first_name = input('\tFirst name []: ')
+        groups = input('\tGroups []: ').split(',')
+        password = read_password()
+
+        adduser(args.USERNAME, password, last_name, first_name, groups)
+        exit(0)
+
+    if args.update:
+        update_from_file(args.update)
+        exit(0)
+
+    if args.filename:
+        add_from_csv(args.filename)
+        exit(0)
+        
+if __name__ == "__main__":
+    main()
