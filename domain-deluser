@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+
+import os
+import shutil
+import csv
+import argparse
+import tarfile
+import getpass
+import configparser
+
+# check for admin privileges
+if getpass.getuser() != 'root' and os.geteuid != 0:
+    print('error: this command must be run as root user')
+    exit(1)
+
+# Check for user existence
+def check_user(username):
+    command = f'{SAMBA_PATH} user list | grep "\\{username}\\b" > /dev/null'
+    exit_code = os.system(command)
+
+    if exit_code != 0:
+        return False
+
+    return True
+
+# Create tar file of provided directory
+def make_tarfile(output_file, source_dir):
+    with tarfile.open(output_file, 'w:gz') as tar:
+        tar.add(source_dir, arcname=os.path.basename(source_dir))
+
+# Delete user from system
+def delete_user(username, tar):
+    command = f'{SAMBA_PATH} user delete \'{username}\''
+    # if tar is true, create a tar file
+    if tar:
+        make_tarfile(f'{USERS_FS_PATH}/{username}.tar.gz', f'{USERS_FS_PATH}/{username}')
+    os.system(command)
+    
+    # remove user home dir
+    shutil.rmtree(f'{USERS_FS_PATH}/{username}', ignore_errors=True)
+
+# Delete users from csv file
+def delete_from_file(filename, tar):
+    with open(filename) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=';')
+        line_count = 1
+        deleted_users = 0
+
+        for row in csv_reader:
+            if len(row) != 8:
+                print(f'error: invalid csv format on line {line_count}')
+                exit(1)
+        
+            username = row[0]
+            if not check_user(username):
+                line_count += 1
+                continue
+
+            delete_user(username, tar)
+            deleted_users += 1
+
+    print(f'processed {line_count} lines')
+    print(f'deleted {deleted_users} users')
+            
+
+# Configuration parser
+config = configparser.ConfigParser()
+if config.read('/etc/ad/settings.cfg') == []:
+    print('error: cannot read configuration file')
+    exit(1)
+
+SAMBA_PATH = config['GLOBAL']['samba_path']
+USERS_FS_PATH = config['GLOBAL']['home_dirs_path']
+
+# arguments parser
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--filename", help="path of input csv file")
+parser.add_argument("-t", "--tar", help="creates a tar file with the content of user's home directory", action="store_true")
+parser.add_argument("USERNAME", nargs='?', help="logon user name", default='')
+
+args = parser.parse_args()
+
+if args.filename:
+    delete_from_file(args.filename, args.tar)
+    exit(0)
+
+if args.USERNAME != '':
+    if not check_user(args.USERNAME):
+        exit(0)
+    delete_user(args.USERNAME, args.tar)
+    exit(0)

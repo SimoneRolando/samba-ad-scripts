@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+
+import os
+import shutil
+import subprocess
+import argparse
+import pwd
+import grp
+import configparser
+
+config = configparser.ConfigParser()
+if config.read('/etc/ad/settings.cfg') == []:
+    print('error: cannot read configuration file')
+    exit(1)
+
+SAMBA_PATH = config['GLOBAL']['samba_path']
+USERS_FS_PATH = config['GLOBAL']['home_dirs_path']
+DOMAIN_NAME = config['GLOBAL']['nt_domain_name']
+
+# Fix user permissions
+def fix_user_permissions(username):
+    uid = pwd.getpwnam(f"{username}").pw_uid
+    gid = grp.getgrnam(f"{username}").gr_gid
+    for root, dirs, files in os.walk(f"{USERS_FS_PATH}/{username}"):
+        for d in dirs:
+            os.chown(os.path.join(root, d), uid, gid)
+        for f in files:
+            os.chown(os.path.join(root, f), uid, gid)
+
+# Get user list as array of strings
+def get_users_list():
+    process = subprocess.Popen([SAMBA_PATH, 'user', 'list'], stdout=subprocess.PIPE)
+    output = process.communicate()[0]
+    output = output.decode('utf-8').splitlines()
+    return output
+
+users = get_users_list()
+for user in users:
+    if user == "Administrator" or user == "krbtgt":
+        continue
+
+    fix_user_permissions(user)
