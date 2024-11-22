@@ -52,7 +52,7 @@ class UserLoader:
             
             try:
                 for row in reader:
-                    user = row.get('user', None)
+                    username = row.get('user', None)
                     last_name = row.get('cognome', None)
                     first_name = row.get('nome', None)
                     group = row.get('gruppo', None)
@@ -60,7 +60,7 @@ class UserLoader:
                     fiscal_id = row.get('CF', None)
                     password = row.get('password', None)
                     
-                    results.append((user, last_name, first_name, group, classroom, fiscal_id, password))
+                    results.append((username, last_name, first_name, group, classroom, fiscal_id, password))
             except csv.Error as e:
                 print("Error parsing CSV file: ", e)
                 

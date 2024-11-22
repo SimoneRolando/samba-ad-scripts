@@ -8,74 +8,32 @@ import pwd
 import grp
 import csv
 import json
+import modules.tools as tools
 
-# global configurations
-samba_path = None
-server_name = None
-home_dirs_path = None
-nt_domain_name = None
-pool_path = None
-pool_owner = None
-winbind_separator = None
+config_manager = tools.Configuration()
+config_manager.load()
 
 # Add users from csv
 def add_from_csv(filepath):
-    with open(filepath) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=';')
-        line_count = 1
-        added_users = 0
-
-        for row in csv_reader:
-            if len(row) != 8:
-                print(f'error: invalid csv format on line {line_count}')
-                exit(1)
-            
-            username = row[0]
-            last_name = row[1]
-            first_name = row[2]
-            groups = [row[3], row[4]] if row[4] != '' else [row[3]]
-            password = row[6]
-
-            if check_user(username):
-                print(f'skipped user {username} as it already exists')
-                line_count += 1
-                continue
-            
-            adduser(username, password, last_name, first_name, groups)
-            added_users += 1
-            line_count += 1
-
-        print(f'processed {added_users} users')
-        print(f'processed {line_count} lines')
+        user_loader = tools.UserLoader(filepath)
+        users = user_loader.load()
+        
+        for user in users:
+            adduser(user.username, user.password, user.last_name, user.first_name, [user.group, user.classroom])
+            print(f"processed user {user.username} - add performed")
 
 # Update user from file
 def update_from_file(filepath):
-    with open(filepath) as csv_file:
-        csv_reader = csv.reader(csv_file, delimiter=';')
-        line_count = 1
-        added_users = 0
-
-        for row in csv_reader:
-            if len(row) != 8:
-                print(f'error: invalid csv format on line {line_count}')
-                exit(1)
-            
-            username = row[0]
-            last_name = row[1]
-            first_name = row[2]
-            groups = [row[3], row[4]] if row[4] != '' else [row[3]]
-            password = row[6]
-            
-            update(username, password, last_name, first_name, groups)
-            added_users += 1
-            line_count += 1
-
-        print(f'processed {added_users} users')
-        print(f'processed {line_count} lines')
+    user_loader = tools.UserLoader(filepath)
+    users = user_loader.load()
+    
+    for user in users:
+        update(user.username, user.password, user.last_name, user.first_name, [user.group, user.classroom])
+        print(f"processed user {user.username} - update performed")
 
 # Check for group existence
 def check_group(group):
-    command = f'{samba_path} group list | grep "{group}\\b" > /dev/null'
+    command = f'{config_manager.samba_path} group list | grep "{group}\\b" > /dev/null'
     exit_code = os.system(command)
 
     if exit_code != 0:
@@ -85,7 +43,7 @@ def check_group(group):
 
 # Check for user existence
 def check_user(username):
-    command = f'{samba_path} user list | grep "\\{username}\\b" > /dev/null'
+    command = f'{config_manager.samba_path} user list | grep "\\{username}\\b" > /dev/null'
     exit_code = os.system(command)
 
     if exit_code != 0:
@@ -95,12 +53,12 @@ def check_user(username):
 
 # Create new group on system
 def create_group(group_name):
-    command = f'{samba_path} group add "{group_name}"'
+    command = f'{config_manager.samba_path} group add "{group_name}"'
     os.system(command)
 
 # Add a member to existing group
 def add_member(group_name, member_name):
-    command = f'{samba_path} group addmembers "{group_name}" "{member_name}"'
+    command = f'{config_manager.samba_path} group addmembers "{group_name}" "{member_name}"'
     os.system(command)
 
 # Create user home directory
@@ -126,7 +84,7 @@ def read_password():
 
 # Add a new user to the domain
 def adduser(username, password, last_name, first_name, groups):
-    command = (f'{samba_path} user create "{username}" {password} --use-username-as-cn ' + 
+    command = (f'{config_manager.samba_path} user create "{username}" {password} --use-username-as-cn ' + 
               f'--surname="{last_name}" --given-name="{first_name}" ' +
               f'--home-drive=H: --home-directory="\\\\{server_name}\\users\\{username}" ' +
               f'--profile-path="\\\\{server_name}\\users\\{username}\\.profiles\\{username}"')
@@ -148,25 +106,25 @@ def update(username, password, last_name, first_name, groups):
         return
     
     # Update user, resetting password and groups
-    change_passwd = (f'{samba_path} user setpassword --newpassword={password} "{username}"')
+    change_passwd = (f'{config_manager.samba_path} user setpassword --newpassword={password} "{username}"')
     os.system(change_passwd)
 
     # Update groups, by removing everything but basic domain elements
-    process = subprocess.Popen([samba_path, 'user', 'getgroups', username], stdout=subprocess.PIPE)
+    process = subprocess.Popen([config_manager.samba_path, 'user', 'getgroups', username], stdout=subprocess.PIPE)
     p_output = process.communicate()[0]
 
     # remove all groups except Domain Users and Domain Admins
     output = p_output.decode('utf-8').splitlines()
     for g in output:
         if g != 'Domain Admins' and g != 'Domain Users':
-            os.system(f'{samba_path} group removemembers "{g}" "{username}"')
+            os.system(f'{config_manager.samba_path} group removemembers "{g}" "{username}"')
 
     # add user to new groups
     for g in groups:
         print(f'group {g}')
         if not check_group(g):
             create_group(g)
-        os.system(f'{samba_path} group addmembers "{g}" "{username}"')
+        os.system(f'{config_manager.samba_path} group addmembers "{g}" "{username}"')
 
 
 def main():
