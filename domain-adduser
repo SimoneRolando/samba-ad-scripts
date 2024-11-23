@@ -21,7 +21,12 @@ def add_from_csv(filepath):
         users = user_loader.load()
         
         for user in users:
-            adduser(user.username, user.password, user.last_name, user.first_name, [user.group, user.classroom])
+            if user.classroom == "" or user.classroom is None:
+                groups = [user.group]
+            else:
+                groups = [user.group, user.classroom]
+
+            adduser(user.username, user.password, user.last_name, user.first_name, groups)
             print(f"processed user {user.username} - add performed")
 
 # Update user from file

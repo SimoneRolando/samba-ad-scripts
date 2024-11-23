@@ -1,5 +1,19 @@
 import json
 import csv
+from dataclasses import dataclass
+
+"""
+User representation
+"""
+@dataclass
+class User:
+    username: str
+    last_name: str
+    first_name: str
+    group: str
+    classroom: str
+    fiscal_id: str
+    password: str
 
 """"
 Manages Active Directory configuration file
@@ -60,7 +74,7 @@ class UserLoader:
                     fiscal_id = row.get('CF', None)
                     password = row.get('password', None)
                     
-                    results.append((username, last_name, first_name, group, classroom, fiscal_id, password))
+                    results.append(User(username, last_name, first_name, group, classroom, fiscal_id, password))
             except csv.Error as e:
                 print("Error parsing CSV file: ", e)
                 
