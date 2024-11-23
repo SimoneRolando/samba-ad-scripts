@@ -50,20 +50,24 @@ def delete_from_file(filename, tar):
         delete_user(user.username, tar)
         print(f"processed user {user.username} - add performed - tar: {tar}")
 
-# arguments parser
-parser = argparse.ArgumentParser()
-parser.add_argument("-f", "--filename", help="path of input csv file")
-parser.add_argument("-t", "--tar", help="creates a tar file with the content of user's home directory", action="store_true")
-parser.add_argument("USERNAME", nargs='?', help="logon user name", default='')
+def main():
+    # arguments parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--filename", help="path of input csv file")
+    parser.add_argument("-t", "--tar", help="creates a tar file with the content of user's home directory", action="store_true")
+    parser.add_argument("USERNAME", nargs='?', help="logon user name", default='')
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
-if args.filename:
-    delete_from_file(args.filename, args.tar)
-    exit(0)
-
-if args.USERNAME != '':
-    if not check_user(args.USERNAME):
+    if args.filename:
+        delete_from_file(args.filename, args.tar)
         exit(0)
-    delete_user(args.USERNAME, args.tar)
-    exit(0)
+
+    if args.USERNAME != '':
+        if not check_user(args.USERNAME):
+            exit(0)
+        delete_user(args.USERNAME, args.tar)
+        exit(0)
+
+if __name__ == "__main__":
+    main()

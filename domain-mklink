@@ -2,67 +2,51 @@
 
 import os
 import getpass
-import csv
 import pwd
 import grp
 import argparse
-import configparser
+import modules.tools as tools
 
-# check for admin privileges
-if getpass.getuser() != 'root' and os.geteuid != 0:
-    print('error: this command must be run as root user')
-    exit(1)
-
-config = configparser.ConfigParser()
-if config.read('/etc/ad/settings.cfg') == []:
-    print('error: cannot read configuration file')
-    exit(1)
-
-SAMBA_PATH = config['GLOBAL']['samba_path']
-SERVER_NAME = config['GLOBAL']['server_name']
-USERS_FS_PATH = config['GLOBAL']['home_dirs_path']
-DOMAIN_NAME = config['GLOBAL']['nt_domain_name']
-POOL_PATH = config['GLOBAL']['pool_path']
-POOL_OWNER = config['GLOBAL']['pool_owner']
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-f", "--filename", help="create links for all users in file")
-args = parser.parse_args()
+config_manager = tools.Configuration()
+config_manager.load()
 
 # Add users from csv
 def add_from_csv(filepath):
-    with open(filepath) as csv_file:
-        line_count = 0
-        csv_reader = csv.reader(csv_file, delimiter=';')
+    user_loader = tools.UserLoader(filepath)
+    users = user_loader.load()
 
-        for row in csv_reader:
-            if len(row) != 8:
-                print(f'error: invalid csv format on line {line_count}')
-                exit(1)
+    for user in users:
+        if user.group == "" and user.classroom == "":
+            print(f"error: user {user.username} has no parent group, skipping link creation...")
+            continue
 
-            username = row[0]
-            groups = [row[3], row[4]] if row[4] != '' else [row[3]]
-            if len(groups) != 2:
-                print(f'error: user {username} has no parent group, skipping link creation...')
-                line_count += 1
-                continue
+        # create directories
+        if not os.path.exists(f'{config_manager.pool_path}/{user.classroom}'):
+            os.mkdir(f'{config_manager.pool_path}/{user.classroom}')
+            uid = pwd.getpwnam(f"{config_manager.nt_domain_name}{config_manager.winbind_separator}{user.username}").pw_uid
+            gid = grp.getgrnam(f'{config_manager.nt_domain_name}{config_manager.winbind_separator}{config_manager.pool_owner}').gr_gid
+            os.chown(f'{config_manager.pool_path}/{user.classroom}', uid, gid)
 
-            # create directories
-            if not os.path.exists(f'{POOL_PATH}/{groups[1]}'):
-                os.mkdir(f'{POOL_PATH}/{groups[1]}')
-                uid = pwd.getpwnam(f"administrator@{DOMAIN_NAME}").pw_uid
-                gid = grp.getgrnam(f'{DOMAIN_NAME}\\{POOL_OWNER}').gr_gid
-                os.chown(f'{POOL_PATH}/{groups[1]}', uid, gid)
-            
-            # create symlink
-            src = f'{USERS_FS_PATH}/{username}'
-            dst = f'{POOL_PATH}/{groups[1]}/{username}'
-            if not os.path.exists(dst):
-                print(f'linking {src} to {dst}')
-                os.symlink(f'{USERS_FS_PATH}/{username}', f'{POOL_PATH}/{groups[1]}/{username}', target_is_directory=True)
-            
-            line_count +=1
+        # create symlink
+        src = f'{config_manager.home_dirs_path}/{user.username}'
+        dst = f'{config_manager.pool_path}/{user.classroom}/{user.username}'
+        if not os.path.exists(dst):
+            print(f'linking {src} to {dst}')
+            os.symlink(f'{config_manager.home_dirs_path}/{user.username}', f'{config_manager.pool_path}/{user.classroom}/{user.username}', target_is_directory=True)
 
-if args.filename:
-    add_from_csv(args.filename)
-    exit(0)
+def main():
+    # check for admin privileges
+    if getpass.getuser() != 'root' and os.geteuid != 0:
+        print('error: this command must be run as root user')
+        exit(1)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--filename", help="create links for all users in file")
+    args = parser.parse_args()
+
+    if args.filename:
+        add_from_csv(args.filename)
+        exit(0)
+
+if __name__ == "__main__":
+    main()

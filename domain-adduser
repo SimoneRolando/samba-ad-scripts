@@ -21,11 +21,7 @@ def add_from_csv(filepath):
         users = user_loader.load()
         
         for user in users:
-            if user.classroom == "" or user.classroom is None:
-                groups = [user.group]
-            else:
-                groups = [user.group, user.classroom]
-
+            groups = [user.group, user.classroom] if user.classroom != "" or user.classroom is not None else [user.group]
             adduser(user.username, user.password, user.last_name, user.first_name, groups)
             print(f"processed user {user.username} - add performed")
 
@@ -35,7 +31,8 @@ def update_from_file(filepath):
     users = user_loader.load()
     
     for user in users:
-        update(user.username, user.password, user.last_name, user.first_name, [user.group, user.classroom])
+        groups = [user.group, user.classroom] if user.classroom != "" or user.classroom is not None else [user.group]
+        update(user.username, user.password, user.last_name, user.first_name, groups)
         print(f"processed user {user.username} - update performed")
 
 # Check for group existence
@@ -72,8 +69,8 @@ def add_member(group_name, member_name):
 def user_mkhomedir(username):
     if not os.path.exists(f'{config_manager.home_dirs_path}/{username}'):
         os.mkdir(f'{config_manager.home_dirs_path}/{username}')
-    uid = pwd.getpwnam(f'{config_manager.nt_domain_name}+{username}').pw_uid
-    gid = grp.getgrnam(f'{config_manager.nt_domain_name}+{username}').gr_gid
+    uid = pwd.getpwnam(f'{config_manager.nt_domain_name}{config_manager.winbind_separator}{username}').pw_uid
+    gid = grp.getgrnam(f'{config_manager.nt_domain_name}{config_manager.winbind_separator}{username}').gr_gid
     os.chown(f'{config_manager.home_dirs_path}/{username}', uid, gid)
 
 # Read password from console input, with silent prompt
