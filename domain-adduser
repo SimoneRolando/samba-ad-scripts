@@ -11,6 +11,10 @@ import modules.tools as tools
 config_manager = tools.Configuration()
 config_manager.load()
 
+# path and server separator
+PATH_DELIM = r"\\"
+SRV_DELIM = r"\\\\"
+
 # Add users from csv
 def add_from_csv(filepath):
         user_loader = tools.UserLoader(filepath)
@@ -82,13 +86,15 @@ def read_password():
 
 # Add a new user to the domain
 def adduser(username, password, last_name, first_name, groups):
-    command = (f'{config_manager.samba_path} user create "{username}" {password} --use-username-as-cn ' + 
-              f'--surname="{last_name}" --given-name="{first_name}" ' +
-              f'--home-drive=H: --home-directory="\\\\{config_manager.server_name}\\users\\{username}" ' +
-              f'--profile-path="\\\\{config_manager.server_name}\\users\\{username}\\.profiles\\{username}"')
+    create_command = f'{config_manager.samba_path} user create "{username}" {password} --use-username-as-cn '
+    user_info = f'--surname="{last_name}" --given-name="{first_name}" '
+    home_info = f'--home-drive=H: --home-directory="{SRV_DELIM}{config_manager.server_name}{PATH_DELIM}users{PATH_DELIM}{username }" '
+    profile_info = f'--profile-path="{SRV_DELIM}{config_manager.server_name}{PATH_DELIM}users{PATH_DELIM}{username}{PATH_DELIM}.profiles{PATH_DELIM}{username}"'
+
+    full_command = create_command + user_info + home_info + profile_info
 
     # add new user
-    os.system(command)
+    os.system(full_command)
     # create home dir
     user_mkhomedir(username)
     
