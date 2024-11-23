@@ -6,6 +6,7 @@ import argparse
 import shutil
 import subprocess
 from sys import exit
+import sys
 import modules.fp_ad_tools as tools
 
 config_manager = tools.Configuration()
@@ -21,6 +22,12 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("GROUP", help="group name to delete profiles", nargs='?', default='')
     parser.add_argument("-u", "--username", help="delete profile for single user")
+
+    # Check number of arguments
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        exit(1)
+
     args = parser.parse_args()
 
     if args.username:

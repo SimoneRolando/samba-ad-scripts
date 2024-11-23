@@ -4,6 +4,7 @@ import os
 import getpass
 import pwd
 import grp
+import sys
 import argparse
 from sys import exit
 import modules.fp_ad_tools as tools
@@ -43,6 +44,12 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--filename", help="create links for all users in file")
+
+    # Check number of arguments
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        exit(1)
+
     args = parser.parse_args()
 
     if args.filename:

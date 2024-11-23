@@ -6,6 +6,7 @@ import argparse
 import getpass
 import pwd
 import grp
+import sys
 from sys import exit
 import modules.fp_ad_tools as tools
 
@@ -148,6 +149,11 @@ def main():
                         action="store_true")
     parser.add_argument("-u", "--update", help="enables update mode, changing existing user information")
     parser.add_argument("USERNAME", nargs='?', help="user logon name")
+
+    # Check number of arguments
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        exit(1)
 
     # Parse arguments
     args = parser.parse_args()

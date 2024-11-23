@@ -5,6 +5,7 @@ import shutil
 import argparse
 import tarfile
 import getpass
+import sys
 from sys import exit
 import modules.fp_ad_tools as tools
 
@@ -57,6 +58,11 @@ def main():
     parser.add_argument("-f", "--filename", help="path of input csv file")
     parser.add_argument("-t", "--tar", help="creates a tar file with the content of user's home directory", action="store_true")
     parser.add_argument("USERNAME", nargs='?', help="logon user name", default='')
+
+    # Check number of arguments
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        exit(1)
 
     args = parser.parse_args()
 

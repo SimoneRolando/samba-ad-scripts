@@ -6,6 +6,7 @@ import pwd
 import grp
 import argparse
 import getpass
+import sys
 from sys import exit
 import modules.fp_ad_tools as tools
 
@@ -52,6 +53,11 @@ def main():
     parser.add_argument("-f", "--filename", help="path for input csv file")
     parser.add_argument("-a", "--all", help="fixes all users permissions")
     parser.add_argument("USERNAME", nargs='?', help="user logon name", default='')
+
+    # Check number of arguments
+    if len(sys.argv) == 1:
+        parser.print_usage()
+        exit(1)
 
     # parse arguments
     args = parser.parse_args()
