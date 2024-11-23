@@ -147,7 +147,7 @@ def main():
     parser.add_argument("-i", "--interactive", help="enables interactive user creation",
                         action="store_true")
     parser.add_argument("-u", "--update", help="enables update mode, changing existing user information")
-    parser.add_argument("USERNAME", nargs='?', help="user logon name", default='')
+    parser.add_argument("USERNAME", nargs='?', help="user logon name")
 
     # Parse arguments
     args = parser.parse_args()
@@ -156,7 +156,7 @@ def main():
     # with the user creation process
     if args.interactive:
         # check presence of username argument
-        if args.USERNAME == '':
+        if not args.USERNAME or args.USERNAME.strip() == "":
             parser.print_usage()
             exit(1)
 
