@@ -6,6 +6,7 @@ import argparse
 import getpass
 import pwd
 import grp
+from sys import exit
 import modules.fp_ad_tools as tools
 
 config_manager = tools.Configuration()

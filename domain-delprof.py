@@ -5,6 +5,7 @@ import getpass
 import argparse
 import shutil
 import subprocess
+from sys import exit
 import modules.fp_ad_tools as tools
 
 config_manager = tools.Configuration()
