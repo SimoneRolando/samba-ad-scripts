@@ -1,0 +1,10 @@
+# Generic directories to ignore
+.vs/
+.vscode/
+.idea/
+cmake-build-debug/
+cmake-build-release/
+dist/
+build/
+
+# Files to ignore
