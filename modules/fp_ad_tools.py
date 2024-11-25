@@ -84,5 +84,18 @@ class UserLoader:
 Checks the validity of a User
 """    
 def check_user_validity(user: User) -> bool:
-    return user.username is not None and user.password is not None and user.first_name is not None and user.last_name is not None and user.group is not None
+    basic = user.username and user.password
+    personal = user.first_name and user.last_name
+    
+    if not user.group:
+        return False
+    
+    # Check user validity based on type
+    if user.group.lower() == "docenti".lower():
+        return basic and personal
+    
+    if user.group and user.group.lower() != "docenti".lower():
+        return basic and personal
+    
+    return False
                 
