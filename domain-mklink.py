@@ -18,6 +18,10 @@ def add_from_csv(filepath):
     users = user_loader.load()
 
     for user in users:
+        if not tools.check_user_validity(user):
+            print('Received invalid user: ', user)
+            continue
+        
         if user.group == "" and user.classroom == "":
             print(f"error: user {user.username} has no parent group, skipping link creation...")
             continue

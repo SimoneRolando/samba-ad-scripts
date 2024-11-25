@@ -23,6 +23,10 @@ def add_from_csv(filepath):
         users = user_loader.load()
         
         for user in users:
+            if not tools.check_user_validity(user):
+                print('Received invalid user: ', user)
+                continue
+            
             groups = [user.group, user.classroom] if user.classroom != "" or user.classroom is not None else [user.group]
             adduser(user.username, user.password, user.last_name, user.first_name, groups)
             print(f"processed user {user.username} - add performed")

@@ -49,6 +49,10 @@ def delete_from_file(filename, tar):
     users = user_loader.load()
 
     for user in users:
+        if not tools.check_user_validity(user):
+            print('Received invalid user: ', user)
+            continue
+        
         delete_user(user.username, tar)
         print(f"processed user {user.username} - add performed - tar: {tar}")
 

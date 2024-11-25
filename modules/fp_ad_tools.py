@@ -78,5 +78,11 @@ class UserLoader:
             except csv.Error as e:
                 print("Error parsing CSV file: ", e)
                 
-        return results        
+        return results
+
+"""
+Checks the validity of a User
+"""    
+def check_user_validity(user: User) -> bool:
+    return user.username is not None and user.password is not None and user.first_name is not None and user.last_name is not None and user.group is not None
                 
