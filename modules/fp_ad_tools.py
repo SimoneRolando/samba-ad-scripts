@@ -66,7 +66,7 @@ class UserLoader:
             
             try:
                 for row in reader:
-                    username = row.get('user', None)
+                    username = row.get('login', None)
                     last_name = row.get('cognome', None)
                     first_name = row.get('nome', None)
                     group = row.get('gruppo', None)
