@@ -43,9 +43,6 @@ def update_from_file(filepath):
 
 # Check for group existence
 def check_group(group):
-    if not group or len(group) == 0:
-        return False
-    
     command = f'{config_manager.samba_path} group list | grep "{group}\\b" > /dev/null'
     exit_code = os.system(command)
 
@@ -111,6 +108,9 @@ def adduser(username, password, last_name, first_name, groups):
     
     # add user to each group or create it if it does not exist
     for group in groups:
+        if not group or len(group) == 0:
+            continue
+        
         if not check_group(group):
             create_group(group)
         add_member(group, username)
