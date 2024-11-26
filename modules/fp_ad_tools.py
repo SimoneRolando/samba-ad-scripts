@@ -71,7 +71,7 @@ class UserLoader:
                     first_name = row.get('nome', None)
                     group = row.get('gruppo', None)
                     classroom = row.get('classe', None)
-                    fiscal_id = row.get('CF', None)
+                    fiscal_id = row.get('cf', None)
                     password = row.get('password', None)
                     
                     results.append(User(username, last_name, first_name, group, classroom, fiscal_id, password))
