@@ -43,6 +43,9 @@ def update_from_file(filepath):
 
 # Check for group existence
 def check_group(group):
+    if not group or len(group) == 0:
+        return False
+    
     command = f'{config_manager.samba_path} group list | grep "{group}\\b" > /dev/null'
     exit_code = os.system(command)
 
