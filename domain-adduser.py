@@ -94,6 +94,10 @@ def read_password():
 
 # Add a new user to the domain
 def adduser(username, password, last_name, first_name, groups):
+    if check_user(username):
+        print(f"User {username} already exists in the domain. Skipping...")
+        return
+    
     create_command = f'{config_manager.samba_path} user create "{username}" {password} --use-username-as-cn '
     user_info = f'--surname="{last_name}" --given-name="{first_name}" '
     home_info = f'--home-drive=H: --home-directory="{SRV_DELIM}{config_manager.server_name}{PATH_DELIM}users{PATH_DELIM}{username }" '
