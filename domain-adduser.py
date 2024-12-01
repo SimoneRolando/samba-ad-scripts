@@ -166,6 +166,8 @@ def main():
     # if interactive mode, read user inputs and start messing around
     # with the user creation process
     if args.interactive:
+        
+        print("Interactive user creation")
 
         # Check user existence before proceeding
         if check_user(args.interactive):
