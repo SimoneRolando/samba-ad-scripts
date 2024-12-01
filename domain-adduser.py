@@ -152,10 +152,8 @@ def main():
 
     # command options and arguments
     parser.add_argument("-f", "--filename", help="path of input csv file")
-    parser.add_argument("-i", "--interactive", help="enables interactive user creation",
-                        action="store_true")
+    parser.add_argument("-i", "--interactive", help="enables interactive user creation")
     parser.add_argument("-u", "--update", help="enables update mode, changing existing user information")
-    parser.add_argument("USERNAME", nargs='?', help="user logon name")
 
     # Check number of arguments
     if len(sys.argv) == 1:
@@ -168,23 +166,19 @@ def main():
     # if interactive mode, read user inputs and start messing around
     # with the user creation process
     if args.interactive:
-        # check presence of username argument
-        if not args.USERNAME or args.USERNAME.strip() == "":
-            parser.print_usage()
-            exit(1)
 
         # Check user existence before proceeding
-        if check_user(args.USERNAME):
+        if check_user(args.interactive):
             exit(0)
         
         # read last name and first name from console
-        print(f'Changing the user information for {args.USERNAME}')
+        print(f'Changing the user information for {args.interactive}')
         last_name = input('\tLast name []: ')
         first_name = input('\tFirst name []: ')
         groups = input('\tGroups []: ').split(',')
         password = read_password()
 
-        adduser(args.USERNAME, password, last_name, first_name, groups)
+        adduser(args.interactive, password, last_name, first_name, groups)
         exit(0)
 
     if args.update:
