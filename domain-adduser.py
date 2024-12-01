@@ -167,10 +167,9 @@ def main():
     # with the user creation process
     if args.interactive:
         
-        print("Interactive user creation")
-
         # Check user existence before proceeding
         if check_user(args.interactive):
+            print(f"User {args.interactive} already exists in the domain. Aborting!")
             exit(0)
         
         # read last name and first name from console
