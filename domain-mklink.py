@@ -12,6 +12,10 @@ import modules.fp_ad_tools as tools
 config_manager = tools.Configuration()
 config_manager.load()
 
+# Convert user first names and last names from spaces to underscores
+def convert_user_names(last_name, first_name) -> str:
+    return last_name.replace(" ", "_") + "_" + first_name.replace(" ", "_")
+
 # Add users from csv
 def add_from_csv(filepath):
     user_loader = tools.UserLoader(filepath)
@@ -38,7 +42,7 @@ def add_from_csv(filepath):
         dst = f'{config_manager.pool_path}/{user.classroom}/{user.username}'
         if not os.path.exists(dst):
             print(f'linking {src} to {dst}')
-            os.symlink(f'{config_manager.home_dirs_path}/{user.username}', f'{config_manager.pool_path}/{user.classroom}/{user.username}', target_is_directory=True)
+            os.symlink(f'{config_manager.home_dirs_path}/{user.username}', f'{config_manager.pool_path}/{user.classroom}/{user.username}_{convert_user_names(user.last_name, user.first_name)}', target_is_directory=True)
 
 def main():
     # check for admin privileges
