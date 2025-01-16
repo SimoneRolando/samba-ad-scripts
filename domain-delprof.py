@@ -8,6 +8,7 @@ import subprocess
 from sys import exit
 import sys
 import modules.fp_ad_tools as tools
+from setproctitle import setproctitle
 
 config_manager = tools.Configuration()
 config_manager.load()

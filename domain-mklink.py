@@ -8,6 +8,7 @@ import sys
 import argparse
 from sys import exit
 import modules.fp_ad_tools as tools
+from setproctitle import setproctitle
 
 config_manager = tools.Configuration()
 config_manager.load()
@@ -45,6 +46,8 @@ def add_from_csv(filepath):
             os.symlink(f'{config_manager.home_dirs_path}/{user.username}', f'{config_manager.pool_path}/{user.classroom}/{user.username}_{convert_user_names(user.last_name, user.first_name)}', target_is_directory=True)
 
 def main():
+    setproctitle("domain-mklink")
+
     # check for admin privileges
     if getpass.getuser() != 'root' and os.geteuid != 0:
         print('error: this command must be run as root user')
