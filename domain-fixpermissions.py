@@ -8,8 +8,7 @@ import argparse
 import getpass
 import sys
 from sys import exit
-import fp_ad_tools.fp_ad_tools as tools
-from setproctitle import setproctitle
+import tools as tools
 
 config_manager = tools.Configuration()
 config_manager.load()
@@ -43,8 +42,6 @@ def fix_from_file(filepath):
         fix_user_permissions(user.username)
 
 def main():
-    setproctitle("domain-fixpermissions")
-
     # check admin privileges
     if getpass.getuser() != 'root' and os.geteuid != 0:
         print("error: this command must be run as root user")

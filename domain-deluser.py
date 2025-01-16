@@ -7,8 +7,8 @@ import tarfile
 import getpass
 import sys
 from sys import exit
-import fp_ad_tools.fp_ad_tools as tools
-from setproctitle import setproctitle
+import tools as tools
+import setproctitle
 
 config_manager = tools.Configuration()
 config_manager.load()
@@ -58,7 +58,7 @@ def delete_from_file(filename, tar):
         print(f"processed user {user.username} - add performed - tar: {tar}")
 
 def main():
-    setproctitle("domain-deluser")
+    setproctitle.setproctitle("domain-deluser")
 
     # arguments parser
     parser = argparse.ArgumentParser()

@@ -7,8 +7,7 @@ import shutil
 import subprocess
 from sys import exit
 import sys
-import fp_ad_tools.fp_ad_tools as tools
-from setproctitle import setproctitle
+import tools as tools
 
 config_manager = tools.Configuration()
 config_manager.load()
