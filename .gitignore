@@ -6,6 +6,8 @@ cmake-build-debug/
 cmake-build-release/
 dist/
 build/
+*egg-info/
 
 # Files to ignore
 *.spec
+

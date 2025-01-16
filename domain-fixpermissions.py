@@ -8,7 +8,7 @@ import argparse
 import getpass
 import sys
 from sys import exit
-import modules.fp_ad_tools as tools
+import fp_ad_tools.fp_ad_tools as tools
 from setproctitle import setproctitle
 
 config_manager = tools.Configuration()
