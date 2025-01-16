@@ -1,23 +1,21 @@
 # Variables
 SRC_FILES := $(wildcard *.py)
-BINARIES := $(patsubst %.py,dist/%,$(SRC_FILES))
 INSTALL_DIR := /usr/bin
 
 # Default target
 all: $(BINARIES)
 
 # Rule to compile Python files to binaries
-dist/%: %.py
-	mkdir -p dist
-	pyinstaller --onefile $< --distpath dist
 
 # Install binaries to /usr/bin
 install: $(BINARIES)
-	@echo "Installing binaries to $(INSTALL_DIR)"
-	@for binary in $(BINARIES); do \
-		echo "Installing $$binary"; \
-		install $$binary $(INSTALL_DIR); \
+	@echo "Installing to $(INSTALL_DIR)"
+	@mkdir -p $(INSTALL_DIR)  # Ensure the installation directory exists
+	@for file in $(SRC_FILES); do \
+		filename=$$(basename $$file .py); \
+		cp $$file $(INSTALL_DIR)/$$filename; \
 	done
+
 
 # Clean up build and dist directories
 clean:
