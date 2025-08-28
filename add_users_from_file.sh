@@ -9,7 +9,7 @@ add_user_command="samba-tool user create"
 # Define the command to set the password
 set_password_command="samba-tool user setpassword"
 
-group_add_command="samba-tool user setprimarygroup"
+group_add_command="samba-tool group addmembers"
 
 # Define the default password (or generate a random one)
 
@@ -22,7 +22,7 @@ fi
 # Read the user data file line by line
 while IFS=' ' read -r login_name first_name last_name email group default_password; do
   # Construct the command to add the user
-  full_add_user_command="$add_user_command $login_name --given-name $first_name --surname $last_name --mail-address $email --home-directory \\claude\$login_name"
+  full_add_user_command="$add_user_command $login_name --given-name $first_name --surname $last_name --mail-address $email --home-directory '\\\\claude\\$login_name' --home-drive=H: --profile-path='\\\\claude\\$login_name\\.profiles'"
 
   # Execute the command to add the user
   echo "Adding user: $login_name"
@@ -42,7 +42,7 @@ while IFS=' ' read -r login_name first_name last_name email group default_passwo
        echo "User $login_name created and password set."
 
        #construct the command to add user to group
-       full_group_add_command="$group_add_command $login_name $group"
+       full_group_add_command="$group_add_command $group $login_name"
 
        # Execute the command to add the user to the group
        echo "Setting group for $login_name"
