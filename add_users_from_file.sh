@@ -22,7 +22,7 @@ fi
 # Read the user data file line by line
 while IFS=' ' read -r login_name first_name last_name email group default_password; do
   # Construct the command to add the user
-  full_add_user_command="$add_user_command $login_name --given-name $first_name --surname $last_name --mail-address $email"
+  full_add_user_command="$add_user_command $login_name --given-name $first_name --surname $last_name --mail-address $email --home-directory \\claude\$login_name"
 
   # Execute the command to add the user
   echo "Adding user: $login_name"
