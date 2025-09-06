@@ -20,9 +20,9 @@ if [ ! -f "$user_data_file" ]; then
 fi
 
 # Read the user data file line by line
-while IFS=' ' read -r login_name first_name last_name email group default_password; do
+while IFS=',' read -r login_name first_name last_name email group default_password; do
   # Construct the command to add the user
-  full_add_user_command="$add_user_command $login_name $default_password --use-username-as-cn --given-name $first_name --surname $last_name --mail-address $email --profile-path='\\\\claude\\userdirs\\$login_name\\.profiles'"
+  full_add_user_command="$add_user_command $login_name $default_password --must-change-at-next-login --use-username-as-cn --given-name $first_name --surname $last_name --mail-address $email --profile-path='\\\\claude\\userdirs\\$login_name\\.profiles'"
 
   # Execute the command to add the user
   echo "Adding user: $login_name"
@@ -31,11 +31,11 @@ while IFS=' ' read -r login_name first_name last_name email group default_passwo
   # Check if the user was added successfully
   if [ $? -eq 0 ]; then
     # Construct the command to set the password
-    full_set_password_command="$set_password_command $login_name --newpassword=$default_password --must-change-at-next-login"
+    #full_set_password_command="$set_password_command $login_name --newpassword=$default_password --must-change-at-next-login"
 
     # Execute the command to set the password
-    echo "Setting password for $login_name"
-    $full_set_password_command
+    #echo "Setting password for $login_name"
+    #$full_set_password_command
 
     # Check if password was set successfully
     if [ $? -eq 0 ]; then
