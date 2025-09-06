@@ -52,7 +52,7 @@ fi
 while IFS=',' read -r login_name first_name last_name email group default_password; do
   # Properly escape the first name and last name
   escaped_first_name=$(printf '%q' "$first_name")
-  escaped_last_name=$(printf 'q' "$last_name")
+  escaped_last_name=$(printf '%q' "$last_name")
 
   # Construct the command to add the user
   user_args=(
