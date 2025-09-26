@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Define source and destination paths
-SOURCE_DIR="/path/to/folders"
-DEST_DIR="/path/to/newfolders"
+SOURCE_DIR="/mnt/storage/userdirs"
+DEST_DIR="/mnt/storage/linuxdirs"
 
 # Check if source directory exists
 if [ ! -d "$SOURCE_DIR" ]; then
