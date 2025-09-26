@@ -1,39 +1,20 @@
 #!/bin/bash
 
 # Define source and destination paths
-SOURCE_DIR="/mnt/storage/userdirs"
-DEST_DIR="/mnt/storage/linuxdirs"
-LOG_FILE="/var/log/folder_recreation.log"
-
-# Function to log messages
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" | tee -a "$LOG_FILE"
-}
+SOURCE_DIR="/path/to/folders"
+DEST_DIR="/path/to/newfolders"
 
 # Check if source directory exists
 if [ ! -d "$SOURCE_DIR" ]; then
-    log_message "ERROR: Source directory $SOURCE_DIR does not exist."
+    echo "Error: Source directory $SOURCE_DIR does not exist."
     exit 1
 fi
 
 # Create destination directory if it doesn't exist
 if [ ! -d "$DEST_DIR" ]; then
-    log_message "INFO: Creating destination directory: $DEST_DIR"
-    mkdir -p "$DEST_DIR" || {
-        log_message "ERROR: Failed to create destination directory $DEST_DIR"
-        exit 1
-    }
+    echo "Creating destination directory: $DEST_DIR"
+    mkdir -p "$DEST_DIR"
 fi
-
-# Initialize log file
-log_message "Starting folder recreation process"
-log_message "Source: $SOURCE_DIR"
-log_message "Destination: $DEST_DIR"
-
-# Counter for statistics
-success_count=0
-skip_count=0
-error_count=0
 
 # Loop through each folder in the source directory
 for folder in "$SOURCE_DIR"/*/; do
@@ -43,42 +24,26 @@ for folder in "$SOURCE_DIR"/*/; do
     # Remove trailing slash and get just the folder name
     folder_name=$(basename "$folder")
     
-    # Check if folder name follows the pattern "name.owner"
-    if [[ "$folder_name" =~ ^[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+$ ]]; then
-        # Extract name and owner from folder name
-        name=$(echo "$folder_name" | cut -d. -f1)
-        owner=$(echo "$folder_name" | cut -d. -f2)
-        
+    # Define the new folder path
+    new_folder_path="$DEST_DIR/$folder_name"
+    
+    # Check if folder already exists in destination
+    if [ ! -d "$new_folder_path" ]; then
         # Create the folder in destination
-        new_folder_path="$DEST_DIR/$folder_name"
+        echo "Creating folder: $new_folder_path"
+        mkdir -p "$new_folder_path"
         
-        log_message "PROCESSING: $folder_name -> $new_folder_path"
+        # Set ownership to name.surname:name.surname
+        echo "Setting ownership to $folder_name:$folder_name for $folder_name"
+        chown "$folder_name:$folder_name" "$new_folder_path"
         
-        # Create directory
-        if mkdir -p "$new_folder_path" 2>/dev/null; then
-            # Set ownership
-            if chown "$name:$owner" "$new_folder_path" 2>/dev/null; then
-                # Set permissions
-                if chmod 644 "$new_folder_path" 2>/dev/null; then
-                    log_message "SUCCESS: $folder_name - ownership: $name:$owner, permissions: 644"
-                    ((success_count++))
-                else
-                    log_message "ERROR: Failed to set permissions for $folder_name"
-                    ((error_count++))
-                fi
-            else
-                log_message "ERROR: Failed to set ownership for $folder_name"
-                ((error_count++))
-            fi
-        else
-            log_message "ERROR: Failed to create directory $new_folder_path"
-            ((error_count++))
-        fi
+        # Set permissions to 644
+        chmod 700 "$new_folder_path"
+        
+        echo "Successfully created and configured: $folder_name"
     else
-        log_message "SKIPPED: $folder_name - does not match pattern 'name.owner'"
-        ((skip_count++))
+        echo "Skipping $folder_name - folder already exists in destination"
     fi
 done
 
-# Print summary
-log_message "PROCESS COMPLETED: Success: $success_count, Skipped: $skip_count, Errors: $error_count"
+echo "Folder recreation completed."
